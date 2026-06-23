@@ -80,7 +80,7 @@ Edit `PRICES` in either script when Anthropic changes prices or ships new models
 
 ## Customize
 
-- **Colors:** `GOLD` / `DIM` near the top of each script.
+- **Colors:** `GOLD` / `DIM` near the top of `claudecost.5s.py` (menu bar); the CLI statusline `cost-meter.py` uses ANSI variables (`CY`/`GN`/`YL`/`RD`) just below its imports.
 - **Refresh rate:** rename the SwiftBar plugin file — `claudecost.5s.py` → `claudecost.10s.py` for a 10-second poll, etc.
 
 ## License

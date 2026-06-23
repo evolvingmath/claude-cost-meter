@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # <xbar.title>Claude Cost Meter</xbar.title>
-# <xbar.version>v2</xbar.version>
+# <xbar.version>1.0.0</xbar.version>
 # <xbar.author>Nihar Kohirkar</xbar.author>
 # <xbar.author.github>evolvingmath</xbar.author.github>
 # <xbar.desc>Live API-equivalent cost of today's Claude sessions (CLI + Mac app).</xbar.desc>
@@ -22,7 +22,7 @@ Author: Nihar Kohirkar. MIT.
 import os, json, glob, time, datetime
 
 PROJ = os.path.expanduser("~/.claude/projects")
-CACHE = "/tmp/claude_costmeter_cache_v2.json"
+CACHE = "/tmp/claude_costmeter_cache.json"
 GOLD = "#9D7E2F"; DIM = "#8A8A8A"
 LIVE_WINDOW = 120  # seconds since last write to count a session as "live"
 

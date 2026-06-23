@@ -13,7 +13,6 @@ Shows, left to right:
     5h/7d  = how much of your Max quota this rolling window has burned (the real cap).
   Quota/context numbers go green<50% / yellow<80% / red>=80%.
 
-For the RETROSPECTIVE per-project/client cost breakdown, see cost_attribution.py.
 Always exits 0 (a non-zero exit blanks the status line).
 """
 import sys, json
