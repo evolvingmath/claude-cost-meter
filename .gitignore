@@ -1,0 +1,7 @@
+# Internal cold-start doc — not for the public repo (contains private project context)
+STATE.md
+
+# Python / macOS cruft
+__pycache__/
+*.pyc
+.DS_Store
