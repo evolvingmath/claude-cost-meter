@@ -7,6 +7,8 @@ A live, at-a-glance meter for what your **Claude Code** session is costing — i
 
 > **"API-equivalent"** = tokens × published Anthropic API prices, with correct prompt-cache tiers. On an API key it's your real spend; on a Pro/Max subscription it's the counterfactual ("what this *would* have cost") — a useful gauge of how hard you're leaning on the model.
 
+> 🤖 **Installing with an AI assistant (Claude)?** Point it at this repo — it reads [`CLAUDE.md`](CLAUDE.md) automatically, which tells it to pick the right surface for you and handle the SwiftBar setup (including the dependency and the first-run folder gotcha).
+
 ## What it looks like
 
 ```
@@ -30,6 +32,8 @@ Opus · ≈$0.42 · ctx 18% · 5h 23% · 7d 41%        ← CLI statusline
 No accounts, no network calls, no secrets — both read only your local transcript files.
 
 ## Install
+
+> **Pick one surface — most people want just one.** Using the **Claude Mac/desktop app**? Install the **macOS menu bar** version (below). Working in the **terminal**? The **CLI statusline** is simplest. Don't install the CLI one for a desktop-app user — its statusline won't appear anywhere they can see it.
 
 ### CLI statusline (any OS)
 
