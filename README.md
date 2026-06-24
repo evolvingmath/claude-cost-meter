@@ -37,8 +37,8 @@ No accounts, no network calls, no secrets — both read only your local transcri
 
 ### CLI statusline (any OS)
 
-1. Copy `cost-meter.py` to `~/.claude/cost-meter.py`.
-2. Add to `~/.claude/settings.json`:
+1. Copy `cost-meter.py` to `~/.claude/cost-meter.py` (or into `$CLAUDE_CONFIG_DIR/` if you've relocated your Claude config dir).
+2. Add to that dir's `settings.json`:
    ```json
    {
      "statusLine": { "type": "command", "command": "python3 ~/.claude/cost-meter.py" }
@@ -50,9 +50,8 @@ Claude Code pipes a JSON blob to the script on stdin (cost, context %, model, an
 ### macOS menu bar
 
 ```bash
-brew install --cask swiftbar      # if you don't already have it
-./install-macos-menubar.sh        # copies the plugin into SwiftBar's plugin folder
-open -a SwiftBar
+cd claude-cost-meter            # the cloned repo
+./install-macos-menubar.sh      # installs SwiftBar if needed, sets it up, and launches it
 ```
 
 The meter appears in your menu bar within a few seconds, showing the day's total across all your sessions.
@@ -81,6 +80,8 @@ Edit `PRICES` in either script when Anthropic changes prices or ships new models
 - Depends on the current Claude Code transcript shape (`~/.claude/projects/**/*.jsonl` with per-turn `usage` + `requestId`). If that format changes, the menu-bar parser needs a tweak.
 - Updates **per turn** (each completed reply), not token-by-token — only the process making the API call sees the live stream.
 - The menu-bar version can't show the Pro/Max quota gauge (`5h`/`7d`) — that's only in the CLI's stdin payload, not in the transcript on disk.
+- **Where it reads:** `$CLAUDE_CONFIG_DIR/projects` if you've set that variable, else `~/.claude/projects` — the plugin and installer both honor it, so a relocated config dir won't silently read empty.
+- A model not in the pricing table is estimated at **Opus rates** and labelled *(unknown — est. at Opus)* in the dropdown — a brand-new model shows a flagged guess, not a silent wrong number.
 
 ## Customize
 

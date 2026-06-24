@@ -22,10 +22,11 @@ the **desktop app**. The statusline will be completely invisible to them.
 - **Unsure which they use? Ask them** before installing anything.
 
 ## CLI statusline — the easy one
-Copy `cost-meter.py` to `~/.claude/cost-meter.py`, then merge into `~/.claude/settings.json`
-(don't clobber existing keys):
+Put `cost-meter.py` in the user's Claude config dir — `$CLAUDE_CONFIG_DIR` if they've set it, else
+`~/.claude` — and merge a `statusLine` block into that dir's `settings.json` (don't clobber existing
+keys). Use the **absolute** path you copied it to (the command may not shell-expand `~`):
 ```json
-"statusLine": { "type": "command", "command": "python3 ~/.claude/cost-meter.py" }
+"statusLine": { "type": "command", "command": "python3 /Users/<name>/.claude/cost-meter.py" }
 ```
 That's it — it renders after each turn.
 
@@ -43,10 +44,13 @@ them, don't hand them back half-done:
    confusing "could not be installed there" message people hit. The fix is to set the folder via
    `defaults` **before** launching SwiftBar, so the dialog never appears.
 
-**The reliable path is to run the bundled installer**, which does all of the above (installs
-SwiftBar via brew if missing, creates an owned plugin folder, copies the plugin, sets
-`PluginDirectory` via `defaults`, then launches/relaunches SwiftBar):
+**The reliable path is to run the bundled installer** (from the cloned repo directory — it can be
+anywhere; the script finds its own files). It installs SwiftBar via brew if missing, **pins the
+plugin to a real `python3`** (SwiftBar's PATH is minimal), **records the user's Claude config dir**
+so a relocated `CLAUDE_CONFIG_DIR` still works, sets `PluginDirectory` via `defaults`, then
+launches/relaunches SwiftBar:
 ```bash
+cd /path/to/claude-cost-meter   # wherever it was cloned
 ./install-macos-menubar.sh
 ```
 **Prefer it over launching SwiftBar by hand** — a manual launch is exactly what triggers the
@@ -64,8 +68,13 @@ Doing it without the script? The order that avoids the trap is: install the Swif
   the GUI render yourself; have them eyeball it.
 - **CLI:** confirm the `statusLine` block is in `~/.claude/settings.json` and the user sees it in
   a Claude Code terminal.
-- The meter reads `~/.claude/projects` (where both the CLI and the Mac app write transcripts).
-  It also needs `python3` (standard-library only — `/usr/bin/python3` is fine, and that's what SwiftBar runs it with). A blank/`$0` **right after install** usually just means no Claude sessions **yet today**. A *persistent* `$0` across days means this user's Claude isn't writing transcripts to `~/.claude/projects` (or `python3` isn't resolving under SwiftBar's minimal environment) — surface that to the user; don't declare success on a `$0`.
+- **Where it looks:** `$CLAUDE_CONFIG_DIR/projects` if the user set `CLAUDE_CONFIG_DIR` (Claude
+  Code's config-dir override), else `~/.claude/projects`. The plugin honors this and the installer
+  records it (SwiftBar's minimal env wouldn't otherwise see the variable). It also needs `python3`
+  (standard-library only); the installer pins the plugin's interpreter to an absolute `python3` it
+  verifies. A blank/`$0` **right after install** usually just means no Claude sessions **yet today**.
+  A *persistent* `$0` means this user's Claude isn't writing transcripts where the meter looks
+  (check `CLAUDE_CONFIG_DIR`) — surface that; don't declare success on a `$0`.
 
 ## If something fails (these are all recoverable — adapt, don't give up)
 - **"could not be installed in that location"** → you launched SwiftBar before setting

@@ -12,17 +12,34 @@ Menu bar : ≈$<sum of every session active today>  (adaptive color -> legible o
 Dropdown : one row per today's session (● live / ○ idle); hover a row for its detail submenu
            (model, main vs subagent split, tokens, reveal-transcript-in-Finder).
 
-Reads ~/.claude/projects (the Claude Code CLI *and* the Mac app write there). Sums each
+Reads (CLAUDE_CONFIG_DIR or ~/.claude)/projects — the CLI *and* the Mac app write there. Sums each
 turn's usage (deduped by requestId) for the main loop + its subagents, priced at published
 API rates with correct cache tiers. Per-file cache keyed by mtime -> only re-parses a session
 when it actually grows. Standalone (no third-party deps).
 
 Author: Nihar Kohirkar. MIT.
 """
-import os, json, glob, time, datetime
+import os, json, glob, time, datetime, tempfile
 
-PROJ = os.path.expanduser("~/.claude/projects")
-CACHE = "/tmp/claude_costmeter_cache.json"
+def _claude_base():
+    # Claude Code lets users relocate ~/.claude via CLAUDE_CONFIG_DIR. The env var is visible
+    # when run from the CLI/statusline; SwiftBar's minimal env is not, so fall back to a sidecar
+    # the installer writes, then to the default.
+    env = os.environ.get("CLAUDE_CONFIG_DIR")
+    if env:
+        return os.path.expanduser(env)
+    try:
+        with open(os.path.expanduser("~/.config/claude-cost-meter/config")) as f:
+            p = f.read().strip()
+            if p:
+                return os.path.expanduser(p)
+    except Exception:
+        pass
+    return os.path.expanduser("~/.claude")
+
+PROJ = os.path.join(_claude_base(), "projects")
+# per-user temp (macOS $TMPDIR is private per user) — avoids /tmp collisions on shared machines
+CACHE = os.path.join(tempfile.gettempdir(), f"claude_costmeter_cache_{os.getuid()}.json")
 GOLD = "#9D7E2F"; DIM = "#8A8A8A"
 LIVE_WINDOW = 120  # seconds since last write to count a session as "live"
 
@@ -162,7 +179,7 @@ def main():
         label = a.get("prompt") or sid[:8]
         dot = "●" if live else "○"
         print(f"{dot} {label}  {usd(tot)} | color={GOLD if live else DIM} font=Menlo")
-        print(f"-- Model: {(a.get('top') or '?').replace('claude-','')} | font=Menlo")
+        print(f"-- Model: {(a.get('top') or '?').replace('claude-','')}{'  (unknown — est. at Opus)' if (a.get('top') and a.get('top') not in PRICES) else ''} | font=Menlo")
         print(f"-- Main {usd(a['main'])}  ·  Subagents {usd(a['sub'])} | font=Menlo")
         print(f"-- Tokens  in {kf(a['tin'])} · out {kf(a['tout'])} | font=Menlo")
         print(f"-- Cache  rd {kf(a['tcr'])} · wr {kf(a['tcw'])} | font=Menlo")
