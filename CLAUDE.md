@@ -59,11 +59,13 @@ Doing it without the script? The order that avoids the trap is: install the Swif
 
 ## Verify before you declare success — don't assume it worked
 - **Menu bar:** run `./claudecost.5s.py` directly; it should print a line starting with `≈$`.
-  Then confirm SwiftBar is running and the `≈$…` item is actually in the menu bar.
+  Then confirm SwiftBar is running, and tell the user exactly where to look — **the top-right of
+  the menu bar, for a `≈$…` amount** (they may not recognize a SwiftBar item). You can't confirm
+  the GUI render yourself; have them eyeball it.
 - **CLI:** confirm the `statusLine` block is in `~/.claude/settings.json` and the user sees it in
   a Claude Code terminal.
 - The meter reads `~/.claude/projects` (where both the CLI and the Mac app write transcripts).
-  A blank/`$0` reading usually means no Claude sessions yet today, or `python3` isn't on PATH.
+  It also needs `python3` (standard-library only — `/usr/bin/python3` is fine, and that's what SwiftBar runs it with). A blank/`$0` **right after install** usually just means no Claude sessions **yet today**. A *persistent* `$0` across days means this user's Claude isn't writing transcripts to `~/.claude/projects` (or `python3` isn't resolving under SwiftBar's minimal environment) — surface that to the user; don't declare success on a `$0`.
 
 ## If something fails (these are all recoverable — adapt, don't give up)
 - **"could not be installed in that location"** → you launched SwiftBar before setting

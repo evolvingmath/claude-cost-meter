@@ -8,9 +8,13 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 
 # 1. Ensure SwiftBar is installed (do it — don't just suggest it).
 if ! ls -d /Applications/SwiftBar.app >/dev/null 2>&1; then
-  if command -v brew >/dev/null 2>&1; then
+  BREW="$(command -v brew || true)"
+  for cand in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    [ -z "$BREW" ] && [ -x "$cand" ] && BREW="$cand"   # Apple-Silicon brew isn't always on PATH
+  done
+  if [ -n "$BREW" ]; then
     echo "Installing SwiftBar via Homebrew…"
-    brew install --cask swiftbar
+    "$BREW" install --cask swiftbar
   else
     echo "SwiftBar isn't installed and Homebrew isn't available."
     echo "Install SwiftBar (free, notarized) from https://swiftbar.app — then re-run this script."
