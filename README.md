@@ -3,7 +3,7 @@
 A live, at-a-glance meter for what your **Claude Code** session is costing — in API-equivalent dollars — without leaving your workflow. Two surfaces of the same idea:
 
 - **CLI statusline** — a line at the bottom of the Claude Code terminal (any OS).
-- **macOS menu bar** — a [SwiftBar](https://swiftbar.app) plugin showing the **total cost of today's sessions** in the menu bar (visible over any app), with a per-session breakdown on click. Works whether you drive Claude from the **Claude Code CLI** or the **Claude desktop app** (both write their transcripts to the same place).
+- **macOS menu bar** — a [SwiftBar](https://swiftbar.app) plugin showing the **cost of today's work** (turns since local midnight) in the menu bar (visible over any app), with a per-session breakdown on click — each session shows both its today cost and its lifetime total, so a week-long session doesn't drown the day's number. Works whether you drive Claude from the **Claude Code CLI** or the **Claude desktop app** (both write their transcripts to the same place).
 
 > **"API-equivalent"** = tokens × published Anthropic API prices, with correct prompt-cache tiers. On an API key it's your real spend; on a Pro/Max subscription it's the counterfactual ("what this *would* have cost") — a useful gauge of how hard you're leaning on the model.
 
@@ -14,15 +14,18 @@ A live, at-a-glance meter for what your **Claude Code** session is costing — i
 ```
 Opus · ≈$0.42 · ctx 18% · 5h 23% · 7d 41%        ← CLI statusline
 
-≈$278.67                                          ← menu bar = today's total (click ↓)
-  7 sessions today · ≈$278.67
-  ● "Add a dark-mode toggle to the dashboard"  ≈$28.61   ← hover a row for details ↓
-       Model: opus-4-8 · Main ≈$26.37 · Subagents ≈$2.24
+≈$78.67                                           ← menu bar = today's work (click ↓)
+  Today (since 00:00) · ≈$78.67 · 7 sessions
+  Lifetime of those sessions · ≈$278.67
+  ● Dark-mode dashboard toggle  ≈$28.61 today · ≈$28.61 total   ← hover a row ↓
+       Model: opus-4-8 · Lifetime Main ≈$26.37 · Subagents ≈$2.24
        Tokens in 19.2K · out 201K · cache rd 12.2M · wr 1.4M
        Reveal transcript in Finder
-  ○ "Refactor the CSV export module"  ≈$83.69
+  ○ CSV export refactor  ≈$23.69 today · ≈$183.69 total
   …                                                  (● live · ○ idle)
 ```
+
+Session rows are named with the **same title the Claude desktop app shows** (including your renames), falling back to the first prompt for sessions the app doesn't know about (e.g. headless `claude -p` runs).
 
 ## Who can run it
 
@@ -59,7 +62,7 @@ The meter appears in your menu bar within a few seconds, showing the day's total
 ## How it works
 
 - The **statusline** version is *handed* the numbers on stdin by Claude Code — it just formats them. Fast, no parsing.
-- The **menu-bar** version has no stdin, so it scans `~/.claude/projects/` for every session active **today**, sums each turn's `usage` block (deduped by `requestId`) for the main loop **and** its subagents, and prices it with the table below. The menu bar shows the day's total; the dropdown lists each session (● live / ○ idle) with a hover submenu of details. It caches per file by mtime, so it only re-parses a session when it actually grows.
+- The **menu-bar** version has no stdin, so it scans `~/.claude/projects/`, sums each turn's `usage` block (deduped by `requestId`) for the main loop **and** its subagents, and prices it with the table below — bucketing cost **per local calendar day using each turn's own timestamp**, not the file's mtime. The menu bar shows the cost of work since midnight; the dropdown lists each session with billable work today (● live / ○ idle) showing today + lifetime cost, with a hover submenu of details. Because "today" is decided by turn timestamps, merely *opening* an old chat in the desktop app (which touches the transcript file) doesn't drag it into the list. Session titles come from the desktop app's session store (`~/Library/Application Support/Claude/claude-code-sessions/`), matched by `cliSessionId`. It caches per file by mtime, so it only re-parses a session when it actually grows.
 
 ## Pricing table (keep this current)
 
@@ -69,6 +72,7 @@ Per million tokens. Cache read = 0.1× input · 5-min cache write = 1.25× · 1-
 | ---------- | ----- | ------ |
 | Fable 5    | $10   | $50    |
 | Opus 4.x   | $5    | $25    |
+| Sonnet 5   | $3    | $15    |
 | Sonnet 4.x | $3    | $15    |
 | Haiku 4.5  | $1    | $5     |
 
