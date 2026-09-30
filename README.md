@@ -66,17 +66,19 @@ The meter appears in your menu bar within a few seconds, showing the day's total
 
 ## Pricing table (keep this current)
 
-Per million tokens. Cache read = 0.1× input · 5-min cache write = 1.25× · 1-hour cache write = 2×.
+Per million tokens (published API rates, checked 2026-09-30). 5-min cache write = 1.25× input · 1-hour cache write = 2× input · cache read = 0.1× input unless listed.
 
-| Model      | Input | Output |
-| ---------- | ----- | ------ |
-| Fable 5    | $10   | $50    |
-| Opus 4.x   | $5    | $25    |
-| Sonnet 5   | $3    | $15    |
-| Sonnet 4.x | $3    | $15    |
-| Haiku 4.5  | $1    | $5     |
+| Model             | Input | Output | Cache read       |
+| ----------------- | ----- | ------ | ---------------- |
+| Fable 5.1         | $10   | $50    | $0.25 (0.025×)   |
+| Fable 5           | $10   | $50    | $1.00            |
+| Opus 5.5          | $4    | $20    | $0.20 (0.05×)    |
+| Opus 5 / 4.5–4.8  | $5    | $25    | $0.50            |
+| Sonnet 5 / 5.5    | $2    | $10    | $0.20            |
+| Sonnet 4.5 / 4.6  | $3    | $15    | $0.30            |
+| Haiku 4.5         | $1    | $5     | $0.10            |
 
-Edit `PRICES` in either script when Anthropic changes prices or ships new models.
+Edit `PRICES` in `claudecost.5s.py` when Anthropic changes prices or ships new models (the CLI statusline needs no table — it shows Claude Code's own `total_cost_usd`).
 
 ## Caveats
 

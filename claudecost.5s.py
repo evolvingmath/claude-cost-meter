@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # <xbar.title>Claude Cost Meter</xbar.title>
-# <xbar.version>1.1.0</xbar.version>
+# <xbar.version>1.2.0</xbar.version>
 # <xbar.author>Nihar Kohirkar</xbar.author>
 # <xbar.author.github>evolvingmath</xbar.author.github>
 # <xbar.desc>Live API-equivalent cost of today's Claude work (CLI + Mac app).</xbar.desc>
@@ -26,7 +26,7 @@ when it actually grows. Standalone (no third-party deps).
 
 Author: Nihar Kohirkar. MIT.
 """
-import os, json, glob, time, datetime, tempfile
+import os, re, json, glob, time, datetime, tempfile
 
 def _claude_base():
     # Claude Code lets users relocate ~/.claude via CLAUDE_CONFIG_DIR. The env var is visible
@@ -52,16 +52,23 @@ CACHE = os.path.join(tempfile.gettempdir(), f"claude_costmeter_cache_{os.getuid(
 GOLD = "#9D7E2F"; DIM = "#8A8A8A"
 LIVE_WINDOW = 120  # seconds since last write to count a session as "live"
 
-# per-token USD (input, output); cache_read=0.1x in, write5m=1.25x in, write1h=2.0x in
+# per-token USD (input, output, cache_read multiplier); write5m=1.25x in, write1h=2.0x in.
+# Cache reads are 0.1x input except where noted (per platform.claude.com pricing, 2026-09-30).
 PRICES = {
-    "claude-fable-5": (10e-6, 50e-6),
-    "claude-opus-4-8": (5e-6, 25e-6), "claude-opus-4-7": (5e-6, 25e-6),
-    "claude-opus-4-6": (5e-6, 25e-6), "claude-opus-4-5": (5e-6, 25e-6),
-    "claude-sonnet-5": (3e-6, 15e-6),  # standard rate (intro $2/$10 through 2026-08 not modeled)
-    "claude-sonnet-4-6": (3e-6, 15e-6), "claude-sonnet-4-5": (3e-6, 15e-6),
-    "claude-haiku-4-5": (1e-6, 5e-6),
+    "claude-fable-5-1": (10e-6, 50e-6, 0.025), "claude-fable-5": (10e-6, 50e-6, 0.1),
+    "claude-opus-5-5": (4e-6, 20e-6, 0.05), "claude-opus-5": (5e-6, 25e-6, 0.1),
+    "claude-opus-4-8": (5e-6, 25e-6, 0.1), "claude-opus-4-7": (5e-6, 25e-6, 0.1),
+    "claude-opus-4-6": (5e-6, 25e-6, 0.1), "claude-opus-4-5": (5e-6, 25e-6, 0.1),
+    "claude-sonnet-5-5": (2e-6, 10e-6, 0.1), "claude-sonnet-5": (2e-6, 10e-6, 0.1),
+    "claude-sonnet-4-6": (3e-6, 15e-6, 0.1), "claude-sonnet-4-5": (3e-6, 15e-6, 0.1),
+    "claude-haiku-4-5": (1e-6, 5e-6, 0.1),
 }
-def rate(m): return PRICES.get((m or "").strip(), PRICES["claude-opus-4-8"])
+def model_id(m):
+    """Strip a trailing date stamp (claude-haiku-4-5-20251001 -> claude-haiku-4-5) so dated IDs price correctly."""
+    return re.sub(r"-\d{8}$", "", (m or "").strip())
+def rate(m): return PRICES.get(model_id(m), PRICES["claude-opus-5"])
+# cached costs are only valid for the price table that produced them — editing PRICES invalidates the cache
+CACHE_V = f"3:{sorted(PRICES.items())}"
 
 def _local_day(ts):
     """ISO UTC timestamp -> local calendar date string (day buckets survive midnight in cache)."""
@@ -106,9 +113,9 @@ def parse(path):
     tin = tout = tcr = tcw = 0
     bym = {}
     for m, inp, out, cr, c5, c1, _, ts in turns.values():
-        bi, bo = rate(m)
+        bi, bo, crm = rate(m)
         d = _local_day(ts)
-        days[d] = days.get(d, 0.0) + inp*bi + out*bo + cr*0.1*bi + c5*1.25*bi + c1*2.0*bi
+        days[d] = days.get(d, 0.0) + inp*bi + out*bo + cr*crm*bi + c5*1.25*bi + c1*2.0*bi
         tin += inp; tout += out; tcr += cr; tcw += c5 + c1
         bym[m] = bym.get(m, 0) + 1
     return (days, tin, tout, tcr, tcw, (max(bym, key=bym.get) if bym else None))
@@ -194,7 +201,7 @@ def main():
     try:
         with open(CACHE) as f:
             c = json.load(f)
-        if isinstance(c, dict) and c.get("v") == 2:
+        if isinstance(c, dict) and c.get("v") == CACHE_V:
             scache = c.get("sessions") or {}
             tcache = c.get("titles") or {}
     except Exception:
@@ -214,7 +221,7 @@ def main():
         sessions.append((f, mt, agg))
     try:
         with open(CACHE, "w") as f:
-            json.dump({"v": 2, "sessions": sfresh, "titles": tfresh}, f)
+            json.dump({"v": CACHE_V, "sessions": sfresh, "titles": tfresh}, f)
     except Exception:
         pass
 
@@ -243,7 +250,7 @@ def main():
         label = " ".join((titles.get(sid) or a.get("prompt") or sid[:8]).split())[:42].replace("|", "¦")
         dot = "●" if live else "○"
         print(f"{dot} {label}  {usd(tcost)} today · {usd(tot)} total | color={GOLD if live else DIM} font=Menlo")
-        print(f"-- Model: {(a.get('top') or '?').replace('claude-','')}{'  (unknown — est. at Opus)' if (a.get('top') and a.get('top') not in PRICES) else ''} | font=Menlo")
+        print(f"-- Model: {(a.get('top') or '?').replace('claude-','')}{'  (unknown — est. at Opus)' if (a.get('top') and model_id(a.get('top')) not in PRICES) else ''} | font=Menlo")
         print(f"-- Lifetime  Main {usd(a['main'])}  ·  Subagents {usd(a['sub'])} | font=Menlo")
         print(f"-- Tokens  in {kf(a['tin'])} · out {kf(a['tout'])} | font=Menlo")
         print(f"-- Cache  rd {kf(a['tcr'])} · wr {kf(a['tcw'])} | font=Menlo")
